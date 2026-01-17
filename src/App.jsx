@@ -13,7 +13,7 @@ function App() {
     if (code) {
       // 코드를 서버로 보내서 사용자 정보 받기
       setLoading(true)
-      fetch('http://localhost:3001/auth/kakao', {
+      fetch('/api/auth/kakao', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),
