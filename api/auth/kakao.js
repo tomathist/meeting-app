@@ -52,13 +52,22 @@ export default async function handler(req, res) {
       }
     );
 
-    const kakaoUser = userResponse.data;
+    const nickname =
+    kakaoUser.properties?.nickname ||
+    kakaoUser.kakao_account?.profile?.nickname ||
+    "";
+
+    const profileImage =
+    kakaoUser.properties?.profile_image ||
+    kakaoUser.kakao_account?.profile?.profile_image_url ||
+    "";
 
     return res.status(200).json({
-      id: kakaoUser.id,
-      nickname: kakaoUser.properties?.nickname ?? "",
-      profileImage: kakaoUser.properties?.profile_image ?? "",
+    id: kakaoUser.id,
+    nickname,
+    profileImage,
     });
+
   } catch (e) {
     const detail = e?.response?.data || e?.message || String(e);
     console.error("Kakao auth error:", detail);
