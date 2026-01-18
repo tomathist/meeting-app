@@ -53,7 +53,8 @@ export default async function handler(req, res) {
     );
 
     const kakaoUser = userResponse.data;
-
+    console.log("KAKAO USER RAW:", JSON.stringify(kakaoUser, null, 2));
+    
     const nickname =
     kakaoUser.properties?.nickname ||
     kakaoUser.kakao_account?.profile?.nickname ||
