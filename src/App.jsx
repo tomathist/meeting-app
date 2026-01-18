@@ -33,7 +33,7 @@ function App() {
   }, [])
 
   const handleKakaoLogin = () => {
-    const redirectUri = 'https://meeting-app-sepia.vercel.app/oauth/kakao'
+    const redirectUri = 'https://meeting-app-sepia.vercel.app'
     const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_JS_KEY}&redirect_uri=${redirectUri}&response_type=code`
     window.location.href = kakaoAuthUrl
   }
