@@ -52,6 +52,8 @@ export default async function handler(req, res) {
       }
     );
 
+    const kakaoUser = userResponse.data;
+
     const nickname =
     kakaoUser.properties?.nickname ||
     kakaoUser.kakao_account?.profile?.nickname ||
@@ -67,6 +69,7 @@ export default async function handler(req, res) {
     nickname,
     profileImage,
     });
+
 
   } catch (e) {
     const detail = e?.response?.data || e?.message || String(e);
