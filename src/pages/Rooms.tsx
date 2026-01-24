@@ -1,176 +1,139 @@
-import { motion } from 'framer-motion';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Plus, Crown, Users, MapPin } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { SizeBadge } from '@/components/ui/SizeBadge';
-import { useMyRooms } from '@/hooks/useMyRooms';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Plus, Users, MapPin } from 'lucide-react';
 
-const statusLabels = {
-  draft: '작성 중',
-  pending: '대기 중',
-  active: '활성',
-  matched: '매칭됨',
-  paused: '일시정지',
-  closed: '종료',
-};
-
-const statusColors = {
-  draft: 'bg-muted text-muted-foreground',
-  pending: 'bg-secondary text-secondary-foreground',
-  active: 'bg-success text-success-foreground',
-  matched: 'bg-primary text-primary-foreground',
-  paused: 'bg-muted text-muted-foreground',
-  closed: 'bg-muted text-muted-foreground',
-};
+interface Room {
+  id: string;
+  name: string;
+  gender: string;
+  member_count: number;
+  max_members: number;
+  area: string;
+  school: string;
+  status: string;
+}
 
 export default function Rooms() {
   const navigate = useNavigate();
-  const { allRooms } = useMyRooms();
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
-  const handleRoomClick = (roomId: string) => {
-    // Navigate to discover with the room selected
-    navigate(`/discover?room=${roomId}`);
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      setUser(JSON.parse(stored));
+    }
+    fetchMyRooms();
+  }, []);
+
+  const fetchMyRooms = async () => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (!stored) return;
+      const user = JSON.parse(stored);
+      
+      // 내 성별의 방만 가져오기 (내가 참여할 수 있는 방)
+      const res = await fetch(`/api/rooms?gender=${user.gender}`);
+      const data = await res.json();
+      setRooms(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error('Failed to fetch rooms:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <AppLayout>
-      <div className="px-4 pt-6 pb-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-foreground">내 방</h1>
-          <Button variant="gradient" size="sm" onClick={() => navigate('/discover?room=create')}>
-            <Plus className="w-4 h-4" />
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
+      <div className="sticky top-0 bg-background/80 backdrop-blur-lg border-b border-border z-10">
+        <div className="px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">내 방</h1>
+          <Button onClick={() => navigate('/rooms/create')} size="sm">
+            <Plus className="w-4 h-4 mr-1" />
             방 만들기
           </Button>
         </div>
+      </div>
 
-        {/* Room List */}
-        <div className="space-y-4">
-          {allRooms.length > 0 ? (
-            allRooms.map(({ room, isHost }, index) => (
+      {/* Content */}
+      <div className="px-4 py-4">
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground">로딩 중...</div>
+        ) : rooms.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">아직 방이 없어요</p>
+            <Button onClick={() => navigate('/rooms/create')}>
+              <Plus className="w-4 h-4 mr-2" />
+              방 만들기
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {rooms.map((room, i) => (
               <motion.div
                 key={room.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                onClick={() => handleRoomClick(room.id)}
-                className="relative bg-card rounded-2xl p-5 shadow-card border border-border overflow-hidden cursor-pointer hover:shadow-elevated transition-shadow"
+                transition={{ delay: i * 0.1 }}
+                className="bg-card rounded-2xl p-4 shadow-card border border-border"
               >
-                {/* Role Banner */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />
-                
-                {/* Top row: Role Badge + Status */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    {isHost ? (
-                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                        <Crown className="w-3 h-3" />
-                        방장
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-accent/10 text-accent-foreground text-xs font-medium">
-                        <Users className="w-3 h-3" />
-                        참가자
-                      </span>
-                    )}
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">{room.name}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                      <MapPin className="w-4 h-4" />
+                      {room.area || '지역 미정'}
+                    </div>
                   </div>
-                  <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[room.status])}>
-                    {statusLabels[room.status]}
+                  <span className={`px-3 py-1 rounded-full text-sm ${
+                    room.status === 'waiting' 
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : room.status === 'matched'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {room.status === 'waiting' ? '대기 중' : room.status === 'matched' ? '매칭됨' : room.status}
                   </span>
                 </div>
-
-                {/* Member avatars */}
-                <div className="flex -space-x-3 mb-4">
-                  {room.members.slice(0, 4).map((member, idx) => (
-                    <div
-                      key={member.userId}
-                      className="relative w-12 h-12 rounded-full border-2 border-card overflow-hidden bg-muted"
-                      style={{ zIndex: 4 - idx }}
-                    >
-                      {member.user.avatarUrl ? (
-                        <img src={member.user.avatarUrl} alt={member.user.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground font-medium">
-                          {member.user.name.charAt(0)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {room.members.length < parseInt(room.size.charAt(0)) && (
-                    <div className="w-12 h-12 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center text-muted-foreground text-xs">
-                      +{parseInt(room.size.charAt(0)) - room.members.length}
-                    </div>
-                  )}
-                </div>
-
-                {/* Room info */}
-                <div className="space-y-2">
-                  {/* Area and Size Tags */}
-                  <div className="flex flex-wrap gap-2">
-                    {/* Areas */}
-                    {(room.preferredAreas || [room.area]).map((area) => (
-                      <span
-                        key={area}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs"
-                      >
-                        <MapPin className="w-3 h-3" />
-                        {area}
-                      </span>
-                    ))}
-                    {/* Sizes - can have multiple */}
-                    {(room.preferredSizes || [room.size]).map((size) => (
-                      <SizeBadge key={size} size={size} />
-                    ))}
-                  </div>
-                  
-                  {/* Room name or schools */}
-                  <p className="text-sm text-muted-foreground">
-                    {room.name || [...new Set(room.members.map(m => m.user.school))].join(', ')}
-                  </p>
+                
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>👥 {room.member_count}/{room.max_members}명</span>
+                  <span>🎓 {room.school || '학교 미정'}</span>
                 </div>
               </motion.div>
-            ))
-          ) : (
-            <EmptyState
-              emoji="🏠"
-              title="아직 방이 없어요"
-              description="친구와 함께 방을 만들어 보세요"
-              action={
-                <Button variant="hero" onClick={() => navigate('/discover?room=create')}>
-                  방 만들기
-                </Button>
-              }
-            />
-          )}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Nav */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border">
+        <div className="flex justify-around py-3">
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/discover')}
+          >
+            <Users className="w-6 h-6" />
+            <span className="text-xs mt-1">발견</span>
+          </button>
+          <button className="flex flex-col items-center text-primary">
+            <Plus className="w-6 h-6" />
+            <span className="text-xs mt-1">내 방</span>
+          </button>
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/profile')}
+          >
+            <div className="w-6 h-6 rounded-full bg-muted" />
+            <span className="text-xs mt-1">프로필</span>
+          </button>
         </div>
       </div>
-    </AppLayout>
-  );
-}
-
-function EmptyState({
-  emoji,
-  title,
-  description,
-  action,
-}: {
-  emoji: string;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center py-12"
-    >
-      <div className="text-4xl mb-4">{emoji}</div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground mb-4">{description}</p>
-      {action}
-    </motion.div>
+    </div>
   );
 }
