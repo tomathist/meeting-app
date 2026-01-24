@@ -14,7 +14,6 @@ export default function KakaoCallback() {
       return;
     }
 
-    // 서버로 code 보내서 로그인 처리
     fetch('/api/auth/kakao', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -26,10 +25,18 @@ export default function KakaoCallback() {
           setError(data.error);
           return;
         }
-        // 로그인 성공 - 유저 정보 저장
+        
+        // 유저 정보 저장
         localStorage.setItem('user', JSON.stringify(data));
-        // 프로필 설정으로 이동
-        navigate('/onboarding/profile');
+        
+        // 프로필 설정 완료 여부 확인
+        if (data.isNewUser || !data.name) {
+          // 새 유저 또는 프로필 미완성 -> 프로필 설정으로
+          navigate('/onboarding/profile');
+        } else {
+          // 기존 유저 -> 메인으로
+          navigate('/discover');
+        }
       })
       .catch((err) => {
         setError('로그인 실패: ' + err.message);

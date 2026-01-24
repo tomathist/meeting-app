@@ -52,15 +52,18 @@ export default async function handler(req, res) {
     const nickname = kakaoUser.properties?.nickname || kakaoUser.kakao_account?.profile?.nickname || "";
     const profileImage = kakaoUser.properties?.profile_image || kakaoUser.kakao_account?.profile?.profile_image_url || "";
 
-    // Supabase에서 유저 찾기 또는 생성
+    // Supabase에서 유저 찾기
     let { data: existingUser } = await supabase
       .from('users')
       .select('*')
       .eq('kakao_id', kakaoUser.id)
       .single();
 
+    let isNewUser = false;
+
     if (!existingUser) {
       // 새 유저 생성
+      isNewUser = true;
       const { data: newUser, error } = await supabase
         .from('users')
         .insert({
@@ -80,10 +83,15 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       id: existingUser.id,
-      kakao_id: kakaoUser.id,
-      nickname,
-      profileImage,
-      isNewUser: !existingUser.name, // 프로필 설정 안했으면 true
+      kakao_id: existingUser.kakao_id,
+      nickname: existingUser.nickname || nickname,
+      profileImage: existingUser.profile_image || profileImage,
+      name: existingUser.name,
+      gender: existingUser.gender,
+      area: existingUser.area,
+      school: existingUser.school,
+      department: existingUser.department,
+      isNewUser: isNewUser || !existingUser.name,
     });
 
   } catch (e) {

@@ -1,10 +1,29 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MessageCircle } from 'lucide-react';
 
 const KAKAO_JS_KEY = '4b9fc07ba0cd8cd40c3df53fbb602a12';
 
 export default function LoginChoice() {
+  const navigate = useNavigate();
+
+  // 이미 로그인된 유저인지 체크
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      if (user.name) {
+        // 프로필 완성된 유저 -> 메인으로
+        navigate('/discover');
+      } else {
+        // 프로필 미완성 -> 프로필 설정으로
+        navigate('/onboarding/profile');
+      }
+    }
+  }, [navigate]);
+
   const handleKakaoLogin = () => {
     const redirectUri = import.meta.env.PROD
       ? 'https://meeting-app-sepia.vercel.app/onboarding/callback'
@@ -21,7 +40,6 @@ export default function LoginChoice() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Hero section */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -38,15 +56,10 @@ export default function LoginChoice() {
             <span className="text-4xl">💕</span>
           </motion.div>
           
-          <h1 className="text-3xl font-bold text-foreground mb-3">
-            미팅
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            새로운 인연을 만나보세요
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-3">미팅</h1>
+          <p className="text-muted-foreground text-lg">새로운 인연을 만나보세요</p>
         </motion.div>
 
-        {/* Login button - 카카오만 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -67,7 +80,6 @@ export default function LoginChoice() {
         </motion.div>
       </div>
 
-      {/* Footer */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
