@@ -17,6 +17,18 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing roomId or userId" });
   }
 
+  // 이미 참여했는지 확인
+  const { data: existing } = await supabase
+    .from('room_members')
+    .select('id')
+    .eq('room_id', roomId)
+    .eq('user_id', userId)
+    .single();
+
+  if (existing) {
+    return res.status(400).json({ error: "이미 신청한 방입니다" });
+  }
+
   // 방 정보 확인
   const { data: room } = await supabase
     .from('rooms')
@@ -25,11 +37,11 @@ export default async function handler(req, res) {
     .single();
 
   if (!room) {
-    return res.status(404).json({ error: "Room not found" });
+    return res.status(404).json({ error: "방을 찾을 수 없습니다" });
   }
 
   if (room.member_count >= room.max_members) {
-    return res.status(400).json({ error: "Room is full" });
+    return res.status(400).json({ error: "방이 가득 찼습니다" });
   }
 
   // 멤버 추가
@@ -47,5 +59,5 @@ export default async function handler(req, res) {
     .update({ member_count: room.member_count + 1 })
     .eq('id', roomId);
 
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ success: true, message: "신청 완료!" });
 }
