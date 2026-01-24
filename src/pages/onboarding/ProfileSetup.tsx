@@ -29,7 +29,7 @@ export default function ProfileSetup() {
 
   const goBack = () => {
     if (currentStepIndex === 0) {
-      navigate('/onboarding/phone');
+      navigate('/onboarding');
     } else {
       setStep(steps[currentStepIndex - 1]);
     }
@@ -37,7 +37,10 @@ export default function ProfileSetup() {
 
   const goNext = () => {
     if (currentStepIndex === steps.length - 1) {
-      navigate('/onboarding/picture');
+      // 프로필 저장하고 메인 화면으로
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...user, ...profile }));
+      navigate('/discover');
     } else {
       setStep(steps[currentStepIndex + 1]);
     }
@@ -210,7 +213,7 @@ export default function ProfileSetup() {
                 어느 학교에 다니세요?
               </h1>
               <p className="text-muted-foreground">
-                학교 이메일로 인증이 필요합니다
+                같은 학교 학생들과 매칭됩니다
               </p>
             </div>
             <Input
@@ -232,7 +235,7 @@ export default function ProfileSetup() {
               disabled={!profile.school.trim() || !profile.department.trim()}
               onClick={goNext}
             >
-              다음
+              완료
             </Button>
           </div>
         );
@@ -250,11 +253,11 @@ export default function ProfileSetup() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-1.5">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          {steps.map((_, i) => (
             <div
               key={i}
-              className={`w-6 h-1 rounded-full transition-colors ${
-                i <= currentStepIndex + 1 ? 'bg-primary' : 'bg-muted'
+              className={`w-8 h-1 rounded-full transition-colors ${
+                i <= currentStepIndex ? 'bg-primary' : 'bg-muted'
               }`}
             />
           ))}
