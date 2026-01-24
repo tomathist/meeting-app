@@ -1,10 +1,23 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MessageCircle, Phone } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
+
+const KAKAO_JS_KEY = '4b9fc07ba0cd8cd40c3df53fbb602a12';
 
 export default function LoginChoice() {
-  const navigate = useNavigate();
+  const handleKakaoLogin = () => {
+    const redirectUri = import.meta.env.PROD
+      ? 'https://meeting-app-sepia.vercel.app/onboarding/callback'
+      : 'http://localhost:5173/onboarding/callback';
+    
+    const kakaoAuthUrl =
+      `https://kauth.kakao.com/oauth/authorize` +
+      `?client_id=${KAKAO_JS_KEY}` +
+      `&redirect_uri=${redirectUri}` +
+      `&response_type=code`;
+    
+    window.location.href = kakaoAuthUrl;
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -33,7 +46,7 @@ export default function LoginChoice() {
           </p>
         </motion.div>
 
-        {/* Login buttons */}
+        {/* Login button - 카카오만 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -44,36 +57,12 @@ export default function LoginChoice() {
             variant="social"
             size="xl"
             className="w-full justify-start gap-4"
-            onClick={() => navigate('/onboarding/phone')}
+            onClick={handleKakaoLogin}
           >
             <div className="w-8 h-8 rounded-lg bg-[#FEE500] flex items-center justify-center">
               <MessageCircle className="w-5 h-5 text-[#3C1E1E]" />
             </div>
             카카오로 시작하기
-          </Button>
-
-          <Button
-            variant="social"
-            size="xl"
-            className="w-full justify-start gap-4"
-            onClick={() => navigate('/onboarding/phone')}
-          >
-            <div className="w-8 h-8 rounded-lg bg-[#03C75A] flex items-center justify-center">
-              <span className="text-white font-bold text-sm">N</span>
-            </div>
-            네이버로 시작하기
-          </Button>
-
-          <Button
-            variant="social"
-            size="xl"
-            className="w-full justify-start gap-4"
-            onClick={() => navigate('/onboarding/phone')}
-          >
-            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-              <Phone className="w-5 h-5 text-foreground" />
-            </div>
-            전화번호로 시작하기
           </Button>
         </motion.div>
       </div>
