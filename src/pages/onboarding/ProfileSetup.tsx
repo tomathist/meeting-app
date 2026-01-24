@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ const areas = [
 export default function ProfileSetup() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>('name');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
     gender: '' as 'male' | 'female' | '',
@@ -23,6 +25,14 @@ export default function ProfileSetup() {
     school: '',
     department: '',
   });
+
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      const parsed = JSON.parse(user);
+      setUserId(parsed.id);
+    }
+  }, []);
 
   const steps: Step[] = ['name', 'gender', 'birthdate', 'area', 'school'];
   const currentStepIndex = steps.indexOf(step);
@@ -35,12 +45,30 @@ export default function ProfileSetup() {
     }
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     if (currentStepIndex === steps.length - 1) {
-      // 프로필 저장하고 메인 화면으로
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      localStorage.setItem('user', JSON.stringify({ ...user, ...profile }));
-      navigate('/discover');
+      // 마지막 단계 - DB에 저장
+      setSaving(true);
+      try {
+        const res = await fetch('/api/user/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, ...profile }),
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert('저장 실패: ' + data.error);
+          return;
+        }
+        // 로컬스토리지 업데이트
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({ ...user, ...profile }));
+        navigate('/discover');
+      } catch (e) {
+        alert('저장 실패');
+      } finally {
+        setSaving(false);
+      }
     } else {
       setStep(steps[currentStepIndex + 1]);
     }
@@ -55,12 +83,8 @@ export default function ProfileSetup() {
               <User className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                이름을 알려주세요
-              </h1>
-              <p className="text-muted-foreground">
-                실명으로 입력해주세요
-              </p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">이름을 알려주세요</h1>
+              <p className="text-muted-foreground">실명으로 입력해주세요</p>
             </div>
             <Input
               placeholder="이름"
@@ -68,13 +92,7 @@ export default function ProfileSetup() {
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
               className="h-14 text-lg rounded-xl"
             />
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              disabled={!profile.name.trim()}
-              onClick={goNext}
-            >
+            <Button variant="hero" size="xl" className="w-full" disabled={!profile.name.trim()} onClick={goNext}>
               다음
             </Button>
           </div>
@@ -84,21 +102,15 @@ export default function ProfileSetup() {
         return (
           <div className="space-y-6">
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                성별을 선택해주세요
-              </h1>
-              <p className="text-muted-foreground">
-                매칭에 사용됩니다
-              </p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">성별을 선택해주세요</h1>
+              <p className="text-muted-foreground">매칭에 사용됩니다</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setProfile({ ...profile, gender: 'male' })}
                 className={`h-32 rounded-2xl border-2 transition-all ${
-                  profile.gender === 'male'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
+                  profile.gender === 'male' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                 }`}
               >
                 <span className="text-4xl mb-2 block">👨</span>
@@ -108,22 +120,14 @@ export default function ProfileSetup() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setProfile({ ...profile, gender: 'female' })}
                 className={`h-32 rounded-2xl border-2 transition-all ${
-                  profile.gender === 'female'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
+                  profile.gender === 'female' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                 }`}
               >
                 <span className="text-4xl mb-2 block">👩</span>
                 <span className="font-medium">여성</span>
               </motion.button>
             </div>
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              disabled={!profile.gender}
-              onClick={goNext}
-            >
+            <Button variant="hero" size="xl" className="w-full" disabled={!profile.gender} onClick={goNext}>
               다음
             </Button>
           </div>
@@ -136,12 +140,8 @@ export default function ProfileSetup() {
               <Calendar className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                생년월일을 입력해주세요
-              </h1>
-              <p className="text-muted-foreground">
-                만 18세 이상만 이용 가능합니다
-              </p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">생년월일을 입력해주세요</h1>
+              <p className="text-muted-foreground">만 18세 이상만 이용 가능합니다</p>
             </div>
             <Input
               type="date"
@@ -149,13 +149,7 @@ export default function ProfileSetup() {
               onChange={(e) => setProfile({ ...profile, birthdate: e.target.value })}
               className="h-14 text-lg rounded-xl"
             />
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              disabled={!profile.birthdate}
-              onClick={goNext}
-            >
+            <Button variant="hero" size="xl" className="w-full" disabled={!profile.birthdate} onClick={goNext}>
               다음
             </Button>
           </div>
@@ -168,12 +162,8 @@ export default function ProfileSetup() {
               <MapPin className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                주로 활동하는 지역은?
-              </h1>
-              <p className="text-muted-foreground">
-                미팅 장소 추천에 사용됩니다
-              </p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">주로 활동하는 지역은?</h1>
+              <p className="text-muted-foreground">미팅 장소 추천에 사용됩니다</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {areas.map((area) => (
@@ -190,13 +180,7 @@ export default function ProfileSetup() {
                 </button>
               ))}
             </div>
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              disabled={!profile.area}
-              onClick={goNext}
-            >
+            <Button variant="hero" size="xl" className="w-full" disabled={!profile.area} onClick={goNext}>
               다음
             </Button>
           </div>
@@ -209,12 +193,8 @@ export default function ProfileSetup() {
               <GraduationCap className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-foreground mb-2">
-                어느 학교에 다니세요?
-              </h1>
-              <p className="text-muted-foreground">
-                같은 학교 학생들과 매칭됩니다
-              </p>
+              <h1 className="text-2xl font-bold text-foreground mb-2">어느 학교에 다니세요?</h1>
+              <p className="text-muted-foreground">같은 학교 학생들과 매칭됩니다</p>
             </div>
             <Input
               placeholder="대학교 이름"
@@ -232,10 +212,10 @@ export default function ProfileSetup() {
               variant="hero"
               size="xl"
               className="w-full"
-              disabled={!profile.school.trim() || !profile.department.trim()}
+              disabled={!profile.school.trim() || !profile.department.trim() || saving}
               onClick={goNext}
             >
-              완료
+              {saving ? '저장 중...' : '완료'}
             </Button>
           </div>
         );
@@ -244,21 +224,15 @@ export default function ProfileSetup() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
       <div className="flex items-center justify-between p-4">
-        <button
-          onClick={goBack}
-          className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
-        >
+        <button onClick={goBack} className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex gap-1.5">
           {steps.map((_, i) => (
             <div
               key={i}
-              className={`w-8 h-1 rounded-full transition-colors ${
-                i <= currentStepIndex ? 'bg-primary' : 'bg-muted'
-              }`}
+              className={`w-8 h-1 rounded-full transition-colors ${i <= currentStepIndex ? 'bg-primary' : 'bg-muted'}`}
             />
           ))}
         </div>
