@@ -6,11 +6,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // Onboarding
 import LoginChoice from "./pages/onboarding/LoginChoice";
-import PhoneVerification from "./pages/onboarding/PhoneVerification";
+import KakaoCallback from "./pages/onboarding/KakaoCallback";
 import ProfileSetup from "./pages/onboarding/ProfileSetup";
 import ProfilePicture from "./pages/onboarding/ProfilePicture";
 import BioSetup from "./pages/onboarding/BioSetup";
-import EmailVerification from "./pages/onboarding/EmailVerification";
 
 // Main app
 import Discover from "./pages/Discover";
@@ -23,7 +22,6 @@ import CreateRoom from "./pages/rooms/CreateRoom";
 // Settings
 import AccountSettings from "./pages/settings/AccountSettings";
 import FriendList from "./pages/settings/FriendList";
-
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,11 +38,10 @@ const App = () => (
           
           {/* Onboarding flow */}
           <Route path="/onboarding" element={<LoginChoice />} />
-          <Route path="/onboarding/phone" element={<PhoneVerification />} />
+          <Route path="/onboarding/callback" element={<KakaoCallback />} />
           <Route path="/onboarding/profile" element={<ProfileSetup />} />
           <Route path="/onboarding/picture" element={<ProfilePicture />} />
           <Route path="/onboarding/bio" element={<BioSetup />} />
-          <Route path="/onboarding/email" element={<EmailVerification />} />
           
           {/* Main app */}
           <Route path="/discover" element={<Discover />} />
