@@ -12,7 +12,6 @@ interface Room {
   max_members: number;
   area: string;
   school: string;
-  host: { nickname: string; profile_image: string };
 }
 
 export default function Discover() {
@@ -20,12 +19,21 @@ export default function Discover() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [appliedRooms, setAppliedRooms] = useState<Set<string>>(new Set());
+  const [applying, setApplying] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
       setUser(JSON.parse(stored));
     }
+    
+    // 이미 신청한 방 목록 불러오기
+    const applied = localStorage.getItem('appliedRooms');
+    if (applied) {
+      setAppliedRooms(new Set(JSON.parse(applied)));
+    }
+    
     fetchRooms();
   }, []);
 
@@ -41,9 +49,10 @@ export default function Discover() {
     }
   };
 
-  const handleJoinRoom = async (roomId: string) => {
-    if (!user) return;
+  const handleApply = async (roomId: string) => {
+    if (!user || appliedRooms.has(roomId)) return;
     
+    setApplying(roomId);
     try {
       const res = await fetch('/api/rooms/join', {
         method: 'POST',
@@ -51,14 +60,22 @@ export default function Discover() {
         body: JSON.stringify({ roomId, userId: user.id }),
       });
       const data = await res.json();
+      
       if (data.error) {
         alert(data.error);
         return;
       }
-      alert('참여 완료!');
-      fetchRooms();
+      
+      // 신청 완료 - 로컬에 저장
+      const newApplied = new Set(appliedRooms);
+      newApplied.add(roomId);
+      setAppliedRooms(newApplied);
+      localStorage.setItem('appliedRooms', JSON.stringify([...newApplied]));
+      
     } catch (e) {
-      alert('참여 실패');
+      alert('신청 실패');
+    } finally {
+      setApplying(null);
     }
   };
 
@@ -93,43 +110,49 @@ export default function Discover() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredRooms.map((room, i) => (
-              <motion.div
-                key={room.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-card rounded-2xl p-4 shadow-card"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{room.name}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                      <MapPin className="w-4 h-4" />
-                      {room.area || '지역 미정'}
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                    {room.member_count}/{room.max_members}명
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-sm text-muted-foreground">
-                    🎓 {room.school || '학교 미정'}
-                  </span>
-                </div>
-
-                <Button 
-                  className="w-full" 
-                  variant="hero"
-                  onClick={() => handleJoinRoom(room.id)}
-                  disabled={room.member_count >= room.max_members}
+            {filteredRooms.map((room, i) => {
+              const isApplied = appliedRooms.has(room.id);
+              const isApplying = applying === room.id;
+              const isFull = room.member_count >= room.max_members;
+              
+              return (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-card rounded-2xl p-4 shadow-card"
                 >
-                  {room.member_count >= room.max_members ? '마감' : '매칭 신청'}
-                </Button>
-              </motion.div>
-            ))}
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold text-lg">{room.name}</h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <MapPin className="w-4 h-4" />
+                        {room.area || '지역 미정'}
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                      {room.member_count}/{room.max_members}명
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-sm text-muted-foreground">
+                      🎓 {room.school || '학교 미정'}
+                    </span>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    variant={isApplied ? "outline" : "hero"}
+                    onClick={() => handleApply(room.id)}
+                    disabled={isApplied || isFull || isApplying}
+                  >
+                    {isApplying ? '신청 중...' : isApplied ? '✓ 신청 완료' : isFull ? '마감' : '매칭 신청'}
+                  </Button>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
