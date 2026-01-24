@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Plus, Users, MapPin } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface Room {
   id: string;
@@ -19,21 +20,16 @@ export default function Discover() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [appliedRooms, setAppliedRooms] = useState<Set<string>>(new Set());
+  const [appliedRoomIds, setAppliedRoomIds] = useState<Set<string>>(new Set());
   const [applying, setApplying] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
-      setUser(JSON.parse(stored));
+      const userData = JSON.parse(stored);
+      setUser(userData);
+      fetchAppliedRooms(userData.id);
     }
-    
-    // 이미 신청한 방 목록 불러오기
-    const applied = localStorage.getItem('appliedRooms');
-    if (applied) {
-      setAppliedRooms(new Set(JSON.parse(applied)));
-    }
-    
     fetchRooms();
   }, []);
 
@@ -41,7 +37,7 @@ export default function Discover() {
     try {
       const res = await fetch('/api/rooms');
       const data = await res.json();
-      setRooms(data);
+      setRooms(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Failed to fetch rooms:', e);
     } finally {
@@ -49,8 +45,20 @@ export default function Discover() {
     }
   };
 
+  const fetchAppliedRooms = async (userId: string) => {
+    // DB에서 내가 신청한 방 목록 가져오기
+    const { data } = await supabase
+      .from('room_members')
+      .select('room_id')
+      .eq('user_id', userId);
+    
+    if (data) {
+      setAppliedRoomIds(new Set(data.map(d => d.room_id)));
+    }
+  };
+
   const handleApply = async (roomId: string) => {
-    if (!user || appliedRooms.has(roomId)) return;
+    if (!user || appliedRoomIds.has(roomId)) return;
     
     setApplying(roomId);
     try {
@@ -66,11 +74,8 @@ export default function Discover() {
         return;
       }
       
-      // 신청 완료 - 로컬에 저장
-      const newApplied = new Set(appliedRooms);
-      newApplied.add(roomId);
-      setAppliedRooms(newApplied);
-      localStorage.setItem('appliedRooms', JSON.stringify([...newApplied]));
+      // 신청 완료 - 상태 업데이트
+      setAppliedRoomIds(prev => new Set([...prev, roomId]));
       
     } catch (e) {
       alert('신청 실패');
@@ -79,9 +84,11 @@ export default function Discover() {
     }
   };
 
-  // 상대 성별 방만 보여주기
+  // 상대 성별 방만 보여주기 + 이미 신청한 방 제외
   const oppositeGender = user?.gender === 'male' ? 'female' : 'male';
-  const filteredRooms = rooms.filter(r => r.gender === oppositeGender);
+  const filteredRooms = rooms.filter(r => 
+    r.gender === oppositeGender && !appliedRoomIds.has(r.id)
+  );
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -111,7 +118,6 @@ export default function Discover() {
         ) : (
           <div className="space-y-4">
             {filteredRooms.map((room, i) => {
-              const isApplied = appliedRooms.has(room.id);
               const isApplying = applying === room.id;
               const isFull = room.member_count >= room.max_members;
               
@@ -144,11 +150,11 @@ export default function Discover() {
 
                   <Button 
                     className="w-full" 
-                    variant={isApplied ? "outline" : "hero"}
+                    variant="hero"
                     onClick={() => handleApply(room.id)}
-                    disabled={isApplied || isFull || isApplying}
+                    disabled={isFull || isApplying}
                   >
-                    {isApplying ? '신청 중...' : isApplied ? '✓ 신청 완료' : isFull ? '마감' : '매칭 신청'}
+                    {isApplying ? '신청 중...' : isFull ? '마감' : '매칭 신청'}
                   </Button>
                 </motion.div>
               );
