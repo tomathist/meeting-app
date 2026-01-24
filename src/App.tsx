@@ -8,14 +8,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginChoice from "./pages/onboarding/LoginChoice";
 import KakaoCallback from "./pages/onboarding/KakaoCallback";
 import ProfileSetup from "./pages/onboarding/ProfileSetup";
-import ProfilePicture from "./pages/onboarding/ProfilePicture";
-import BioSetup from "./pages/onboarding/BioSetup";
 
 // Main app
 import Discover from "./pages/Discover";
+import Pending from "./pages/Pending";
 import Rooms from "./pages/Rooms";
-import Chat from "./pages/Chat";
-import Inbox from "./pages/Inbox";
 import Profile from "./pages/Profile";
 import CreateRoom from "./pages/rooms/CreateRoom";
 
@@ -40,15 +37,12 @@ const App = () => (
           <Route path="/onboarding" element={<LoginChoice />} />
           <Route path="/onboarding/callback" element={<KakaoCallback />} />
           <Route path="/onboarding/profile" element={<ProfileSetup />} />
-          <Route path="/onboarding/picture" element={<ProfilePicture />} />
-          <Route path="/onboarding/bio" element={<BioSetup />} />
           
           {/* Main app */}
           <Route path="/discover" element={<Discover />} />
+          <Route path="/pending" element={<Pending />} />
           <Route path="/rooms" element={<Rooms />} />
           <Route path="/rooms/create" element={<CreateRoom />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/inbox" element={<Inbox />} />
           <Route path="/profile" element={<Profile />} />
           
           {/* Settings */}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, MapPin } from 'lucide-react';
+import { Plus, Users, MapPin, Search, Clock, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Room {
@@ -46,7 +46,6 @@ export default function Discover() {
   };
 
   const fetchAppliedRooms = async (userId: string) => {
-    // DB에서 내가 신청한 방 목록 가져오기
     const { data } = await supabase
       .from('room_members')
       .select('room_id')
@@ -74,7 +73,6 @@ export default function Discover() {
         return;
       }
       
-      // 신청 완료 - 상태 업데이트
       setAppliedRoomIds(prev => new Set([...prev, roomId]));
       
     } catch (e) {
@@ -84,7 +82,6 @@ export default function Discover() {
     }
   };
 
-  // 상대 성별 방만 보여주기 + 이미 신청한 방 제외
   const oppositeGender = user?.gender === 'male' ? 'female' : 'male';
   const filteredRooms = rooms.filter(r => 
     r.gender === oppositeGender && !appliedRoomIds.has(r.id)
@@ -167,8 +164,15 @@ export default function Discover() {
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border">
         <div className="flex justify-around py-3">
           <button className="flex flex-col items-center text-primary">
-            <Users className="w-6 h-6" />
+            <Search className="w-6 h-6" />
             <span className="text-xs mt-1">발견</span>
+          </button>
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/pending')}
+          >
+            <Clock className="w-6 h-6" />
+            <span className="text-xs mt-1">대기</span>
           </button>
           <button 
             className="flex flex-col items-center text-muted-foreground"
@@ -181,7 +185,7 @@ export default function Discover() {
             className="flex flex-col items-center text-muted-foreground"
             onClick={() => navigate('/profile')}
           >
-            <div className="w-6 h-6 rounded-full bg-muted" />
+            <User className="w-6 h-6" />
             <span className="text-xs mt-1">프로필</span>
           </button>
         </div>
