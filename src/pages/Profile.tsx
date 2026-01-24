@@ -1,121 +1,127 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AppLayout } from '@/components/layout/AppLayout';
-import { currentUser } from '@/data/mockData';
-import { 
-  CheckCircle, 
-  Phone, 
-  GraduationCap, 
-  ChevronRight,
-  Shield,
-  HelpCircle,
-  LogOut,
-  Settings,
-  Users
-} from 'lucide-react';
+import { Settings, Users, Shield, HelpCircle, LogOut } from 'lucide-react';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const user = currentUser;
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('user');
+    if (stored) {
+      setUser(JSON.parse(stored));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    navigate('/onboarding');
+  };
+
+  if (!user) {
+    return <div className="min-h-screen flex items-center justify-center">로딩 중...</div>;
+  }
 
   return (
-    <AppLayout>
-      <div className="px-4 pt-6 pb-4">
-        {/* Profile header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl p-6 shadow-card border border-border mb-6"
-        >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
-              {user.name.charAt(0)}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-foreground">{user.name}</h2>
-              <p className="text-sm text-muted-foreground">
-                {user.school} · {user.area}
-              </p>
-            </div>
+    <div className="min-h-screen bg-background pb-20">
+      {/* Profile Card */}
+      <div className="bg-card m-4 rounded-2xl p-6 shadow-card">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
+            {user.name?.charAt(0) || user.nickname?.charAt(0) || '?'}
           </div>
-
-          {/* Verification status */}
-          <div className="flex gap-3">
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${
-              user.phoneVerified 
-                ? 'bg-success/10 text-success' 
-                : 'bg-muted text-muted-foreground'
-            }`}>
-              <Phone className="w-3.5 h-3.5" />
-              전화 인증
-              {user.phoneVerified && <CheckCircle className="w-3.5 h-3.5" />}
-            </div>
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm ${
-              user.schoolVerified 
-                ? 'bg-success/10 text-success' 
-                : 'bg-muted text-muted-foreground'
-            }`}>
-              <GraduationCap className="w-3.5 h-3.5" />
-              학교 인증
-              {user.schoolVerified && <CheckCircle className="w-3.5 h-3.5" />}
-            </div>
+          <div>
+            <h2 className="text-xl font-bold">{user.name || user.nickname}</h2>
+            <p className="text-muted-foreground text-sm">
+              {user.school} · {user.area}
+            </p>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Menu sections */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card rounded-2xl shadow-card border border-border overflow-hidden mb-4"
-        >
-          <MenuItem icon={Settings} label="계정 설정" onClick={() => navigate('/settings/account')} />
-          <MenuItem icon={Users} label="친구 목록" onClick={() => navigate('/settings/friends')} />
-          <MenuItem icon={Shield} label="안전 및 신고" />
-          <MenuItem icon={HelpCircle} label="도움말" />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-card rounded-2xl shadow-card border border-border overflow-hidden"
-        >
-          <MenuItem icon={LogOut} label="로그아웃" danger />
-        </motion.div>
-
-        {/* App version */}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          미팅 v1.0.0
-        </p>
+        <div className="flex gap-2 mt-4">
+          {user.gender && (
+            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+              {user.gender === 'male' ? '👨 남성' : '👩 여성'}
+            </span>
+          )}
+          {user.department && (
+            <span className="px-3 py-1 bg-muted text-muted-foreground rounded-full text-sm">
+              {user.department}
+            </span>
+          )}
+        </div>
       </div>
-    </AppLayout>
-  );
-}
 
-function MenuItem({ 
-  icon: Icon, 
-  label, 
-  danger = false,
-  onClick 
-}: { 
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  danger?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button 
-      onClick={onClick}
-      className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0"
-    >
-      <div className="flex items-center gap-3">
-        <Icon className={`w-5 h-5 ${danger ? 'text-destructive' : 'text-muted-foreground'}`} />
-        <span className={`font-medium ${danger ? 'text-destructive' : 'text-foreground'}`}>
-          {label}
-        </span>
+      {/* Menu */}
+      <div className="bg-card m-4 rounded-2xl overflow-hidden shadow-card">
+        <button 
+          className="w-full flex items-center gap-4 p-4 hover:bg-muted transition-colors"
+          onClick={() => navigate('/settings/account')}
+        >
+          <Settings className="w-5 h-5 text-muted-foreground" />
+          <span>계정 설정</span>
+          <span className="ml-auto text-muted-foreground">›</span>
+        </button>
+        
+        <button 
+          className="w-full flex items-center gap-4 p-4 hover:bg-muted transition-colors border-t border-border"
+          onClick={() => navigate('/settings/friends')}
+        >
+          <Users className="w-5 h-5 text-muted-foreground" />
+          <span>친구 목록</span>
+          <span className="ml-auto text-muted-foreground">›</span>
+        </button>
+        
+        <button className="w-full flex items-center gap-4 p-4 hover:bg-muted transition-colors border-t border-border">
+          <Shield className="w-5 h-5 text-muted-foreground" />
+          <span>안전 및 신고</span>
+          <span className="ml-auto text-muted-foreground">›</span>
+        </button>
+        
+        <button className="w-full flex items-center gap-4 p-4 hover:bg-muted transition-colors border-t border-border">
+          <HelpCircle className="w-5 h-5 text-muted-foreground" />
+          <span>도움말</span>
+          <span className="ml-auto text-muted-foreground">›</span>
+        </button>
       </div>
-      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-    </button>
+
+      {/* Logout */}
+      <div className="bg-card m-4 rounded-2xl overflow-hidden shadow-card">
+        <button 
+          className="w-full flex items-center gap-4 p-4 hover:bg-muted transition-colors text-red-500"
+          onClick={handleLogout}
+        >
+          <LogOut className="w-5 h-5" />
+          <span>로그아웃</span>
+          <span className="ml-auto">›</span>
+        </button>
+      </div>
+
+      <p className="text-center text-muted-foreground text-sm mt-4">미팅 v1.0.0</p>
+
+      {/* Bottom Nav */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border">
+        <div className="flex justify-around py-3">
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/discover')}
+          >
+            <Users className="w-6 h-6" />
+            <span className="text-xs mt-1">발견</span>
+          </button>
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/rooms')}
+          >
+            <span className="text-xl">+</span>
+            <span className="text-xs mt-1">내 방</span>
+          </button>
+          <button className="flex flex-col items-center text-primary">
+            <div className="w-6 h-6 rounded-full bg-primary/20" />
+            <span className="text-xs mt-1">프로필</span>
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
