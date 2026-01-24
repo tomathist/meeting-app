@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Plus, Users, MapPin } from 'lucide-react';
+import { Plus, Users, MapPin, Search, Clock, User } from 'lucide-react';
 
 interface Room {
   id: string;
@@ -35,7 +35,6 @@ export default function Rooms() {
       if (!stored) return;
       const user = JSON.parse(stored);
       
-      // 내 성별의 방만 가져오기 (내가 참여할 수 있는 방)
       const res = await fetch(`/api/rooms?gender=${user.gender}`);
       const data = await res.json();
       setRooms(Array.isArray(data) ? data : []);
@@ -118,8 +117,15 @@ export default function Rooms() {
             className="flex flex-col items-center text-muted-foreground"
             onClick={() => navigate('/discover')}
           >
-            <Users className="w-6 h-6" />
+            <Search className="w-6 h-6" />
             <span className="text-xs mt-1">발견</span>
+          </button>
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/pending')}
+          >
+            <Clock className="w-6 h-6" />
+            <span className="text-xs mt-1">대기</span>
           </button>
           <button className="flex flex-col items-center text-primary">
             <Plus className="w-6 h-6" />
@@ -129,7 +135,7 @@ export default function Rooms() {
             className="flex flex-col items-center text-muted-foreground"
             onClick={() => navigate('/profile')}
           >
-            <div className="w-6 h-6 rounded-full bg-muted" />
+            <User className="w-6 h-6" />
             <span className="text-xs mt-1">프로필</span>
           </button>
         </div>

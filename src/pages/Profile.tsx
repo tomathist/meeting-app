@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Users, Shield, HelpCircle, LogOut } from 'lucide-react';
+import { Settings, Users, Shield, HelpCircle, LogOut, Search, Clock, Plus, User } from 'lucide-react';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ export default function Profile() {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('appliedRooms');
     navigate('/onboarding');
   };
 
@@ -106,18 +107,25 @@ export default function Profile() {
             className="flex flex-col items-center text-muted-foreground"
             onClick={() => navigate('/discover')}
           >
-            <Users className="w-6 h-6" />
+            <Search className="w-6 h-6" />
             <span className="text-xs mt-1">발견</span>
+          </button>
+          <button 
+            className="flex flex-col items-center text-muted-foreground"
+            onClick={() => navigate('/pending')}
+          >
+            <Clock className="w-6 h-6" />
+            <span className="text-xs mt-1">대기</span>
           </button>
           <button 
             className="flex flex-col items-center text-muted-foreground"
             onClick={() => navigate('/rooms')}
           >
-            <span className="text-xl">+</span>
+            <Plus className="w-6 h-6" />
             <span className="text-xs mt-1">내 방</span>
           </button>
           <button className="flex flex-col items-center text-primary">
-            <div className="w-6 h-6 rounded-full bg-primary/20" />
+            <User className="w-6 h-6" />
             <span className="text-xs mt-1">프로필</span>
           </button>
         </div>
