@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 // Onboarding
 import LoginChoice from "./pages/onboarding/LoginChoice";
 import KakaoCallback from "./pages/onboarding/KakaoCallback";
+import PhoneLogin from "./pages/onboarding/PhoneLogin";
 import ProfileSetup from "./pages/onboarding/ProfileSetup";
 
 // Main app
@@ -30,12 +31,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Redirect root to onboarding */}
           <Route path="/" element={<Navigate to="/onboarding" replace />} />
           
-          {/* Onboarding flow */}
+          {/* Onboarding */}
           <Route path="/onboarding" element={<LoginChoice />} />
           <Route path="/onboarding/callback" element={<KakaoCallback />} />
+          <Route path="/onboarding/phone" element={<PhoneLogin />} />
           <Route path="/onboarding/profile" element={<ProfileSetup />} />
           
           {/* Main app */}
@@ -49,7 +50,6 @@ const App = () => (
           <Route path="/settings/account" element={<AccountSettings />} />
           <Route path="/settings/friends" element={<FriendList />} />
           
-          {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

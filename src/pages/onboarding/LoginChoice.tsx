@@ -2,23 +2,20 @@ import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Phone } from 'lucide-react';
 
 const KAKAO_JS_KEY = '4b9fc07ba0cd8cd40c3df53fbb602a12';
 
 export default function LoginChoice() {
   const navigate = useNavigate();
 
-  // 이미 로그인된 유저인지 체크
   useEffect(() => {
     const stored = localStorage.getItem('user');
     if (stored) {
       const user = JSON.parse(stored);
       if (user.name) {
-        // 프로필 완성된 유저 -> 메인으로
         navigate('/discover');
       } else {
-        // 프로필 미완성 -> 프로필 설정으로
         navigate('/onboarding/profile');
       }
     }
@@ -36,6 +33,15 @@ export default function LoginChoice() {
       `&response_type=code`;
     
     window.location.href = kakaoAuthUrl;
+  };
+
+  const handleNaverLogin = () => {
+    // TODO: 네이버 로그인 구현
+    alert('네이버 로그인은 준비 중입니다');
+  };
+
+  const handlePhoneLogin = () => {
+    navigate('/onboarding/phone');
   };
 
   return (
@@ -76,6 +82,30 @@ export default function LoginChoice() {
               <MessageCircle className="w-5 h-5 text-[#3C1E1E]" />
             </div>
             카카오로 시작하기
+          </Button>
+
+          <Button
+            variant="social"
+            size="xl"
+            className="w-full justify-start gap-4"
+            onClick={handleNaverLogin}
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#03C75A] flex items-center justify-center">
+              <span className="text-white font-bold text-sm">N</span>
+            </div>
+            네이버로 시작하기
+          </Button>
+
+          <Button
+            variant="social"
+            size="xl"
+            className="w-full justify-start gap-4"
+            onClick={handlePhoneLogin}
+          >
+            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+              <Phone className="w-5 h-5 text-foreground" />
+            </div>
+            전화번호로 시작하기
           </Button>
         </motion.div>
       </div>
