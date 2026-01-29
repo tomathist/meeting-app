@@ -127,7 +127,6 @@ export default function PhoneVerify() {
     const phoneNumber = phone.replace(/-/g, '');
 
     try {
-      // Twilio 인증 확인
       const verifyRes = await fetch('/api/sms/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,10 +139,8 @@ export default function PhoneVerify() {
         return;
       }
 
-      // 현재 유저 정보 가져오기
       const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-      // DB에 핸드폰 번호 업데이트
       const { data, error } = await supabase
         .from('users')
         .update({ phone: phoneNumber })
@@ -156,10 +153,7 @@ export default function PhoneVerify() {
         return;
       }
 
-      // 로컬스토리지 업데이트
       localStorage.setItem('user', JSON.stringify(data));
-
-      // 프로필 설정으로
       navigate('/onboarding/profile');
     } catch (e) {
       alert('인증 실패');
@@ -180,13 +174,9 @@ export default function PhoneVerify() {
       setCode(['', '', '', '', '', '']);
       setCountdown(0);
     } else {
-      navigate('/onboarding');
-    }
-  };
-
-  const handleExit = () => {
-    if (confirm('로그인 화면으로 돌아가시겠습니까?')) {
+      // 로그아웃하고 로그인 페이지로
       localStorage.removeItem('user');
+      localStorage.removeItem('appliedRooms');
       navigate('/onboarding');
     }
   };
@@ -199,12 +189,9 @@ export default function PhoneVerify() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center p-4">
         <button onClick={handleBack} className="p-2 -ml-2 hover:bg-muted rounded-lg">
           <ArrowLeft className="w-5 h-5" />
-        </button>
-        <button onClick={handleExit} className="p-2 -mr-2 hover:bg-muted rounded-lg">
-          <LogOut className="w-5 h-5 text-muted-foreground" />
         </button>
       </div>
 

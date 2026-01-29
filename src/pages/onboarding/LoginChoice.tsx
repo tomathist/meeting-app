@@ -13,10 +13,15 @@ export default function LoginChoice() {
     const stored = localStorage.getItem('user');
     if (stored) {
       const user = JSON.parse(stored);
-      if (user.name) {
-        navigate('/discover');
-      } else {
+      if (!user.phone) {
+        // 핸드폰 미인증
+        navigate('/onboarding/phone-verify');
+      } else if (!user.name) {
+        // 프로필 미완성
         navigate('/onboarding/profile');
+      } else {
+        // 완료
+        navigate('/discover');
       }
     }
   }, [navigate]);
@@ -36,7 +41,6 @@ export default function LoginChoice() {
   };
 
   const handleNaverLogin = () => {
-    // TODO: 네이버 로그인 구현
     alert('네이버 로그인은 준비 중입니다');
   };
 
