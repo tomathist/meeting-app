@@ -3,10 +3,10 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-type Step = 'phone' | 'verify';
+type Step = 'phone' | 'verify' | 'link';
 
 export default function PhoneVerify() {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ export default function PhoneVerify() {
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [resendCountdown, setResendCountdown] = useState(0);
+  const [existingUser, setExistingUser] = useState<any>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -127,6 +128,7 @@ export default function PhoneVerify() {
     const phoneNumber = phone.replace(/-/g, '');
 
     try {
+      // Twilio 인증 확인
       const verifyRes = await fetch('/api/sms/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,27 +141,104 @@ export default function PhoneVerify() {
         return;
       }
 
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-      const { data, error } = await supabase
+      // DB에서 이 전화번호로 가입된 유저가 있는지 확인
+      const { data: phoneUser } = await supabase
         .from('users')
-        .update({ phone: phoneNumber })
-        .eq('id', user.id)
-        .select()
+        .select('*')
+        .eq('phone', phoneNumber)
         .single();
 
-      if (error) {
-        alert('저장 실패: ' + error.message);
-        return;
-      }
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-      localStorage.setItem('user', JSON.stringify(data));
-      navigate('/onboarding/profile');
+      if (phoneUser && phoneUser.id !== currentUser.id) {
+        // 이미 다른 계정으로 가입된 번호
+        setExistingUser(phoneUser);
+        setStep('link');
+      } else {
+        // 새 번호 - 현재 계정에 연결
+        await linkPhoneToCurrentUser(phoneNumber);
+      }
     } catch (e) {
       alert('인증 실패');
     } finally {
       setLoading(false);
     }
+  };
+
+  const linkPhoneToCurrentUser = async (phoneNumber: string) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+    const { data, error } = await supabase
+      .from('users')
+      .update({ phone: phoneNumber })
+      .eq('id', currentUser.id)
+      .select()
+      .single();
+
+    if (error) {
+      alert('저장 실패: ' + error.message);
+      return;
+    }
+
+    localStorage.setItem('user', JSON.stringify(data));
+    
+    if (data.name) {
+      navigate('/discover');
+    } else {
+      navigate('/onboarding/profile');
+    }
+  };
+
+  const handleLinkAccount = async () => {
+    // 기존 계정에 카카오 정보 연동
+    setLoading(true);
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+    try {
+      // 기존 유저에 카카오 정보 추가
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          kakao_id: currentUser.kakao_id,
+          nickname: existingUser.nickname || currentUser.nickname,
+          profile_image: existingUser.profile_image || currentUser.profile_image,
+        })
+        .eq('id', existingUser.id)
+        .select()
+        .single();
+
+      if (error) {
+        alert('연동 실패: ' + error.message);
+        return;
+      }
+
+      // 현재 카카오로 만든 임시 계정 삭제
+      await supabase
+        .from('users')
+        .delete()
+        .eq('id', currentUser.id);
+
+      // 기존 계정으로 로그인
+      localStorage.setItem('user', JSON.stringify(data));
+
+      if (data.name) {
+        navigate('/discover');
+      } else {
+        navigate('/onboarding/profile');
+      }
+    } catch (e) {
+      alert('연동 실패');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateNewAccount = async () => {
+    // 새 계정으로 진행 (다른 번호로 인증)
+    setStep('phone');
+    setPhone('');
+    setCode(['', '', '', '', '', '']);
+    setExistingUser(null);
   };
 
   const handleResend = () => {
@@ -173,8 +252,9 @@ export default function PhoneVerify() {
       setStep('phone');
       setCode(['', '', '', '', '', '']);
       setCountdown(0);
+    } else if (step === 'link') {
+      setStep('verify');
     } else {
-      // 로그아웃하고 로그인 페이지로
       localStorage.removeItem('user');
       localStorage.removeItem('appliedRooms');
       navigate('/onboarding');
@@ -196,7 +276,7 @@ export default function PhoneVerify() {
       </div>
 
       <div className="flex-1 px-6 pt-8">
-        {step === 'phone' ? (
+        {step === 'phone' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -226,7 +306,9 @@ export default function PhoneVerify() {
               {loading ? '전송 중...' : '인증번호 받기'}
             </Button>
           </motion.div>
-        ) : (
+        )}
+
+        {step === 'verify' && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -287,6 +369,53 @@ export default function PhoneVerify() {
                 ? `인증번호 재전송 (${formatTime(resendCountdown)})`
                 : '인증번호 재전송'}
             </button>
+          </motion.div>
+        )}
+
+        {step === 'link' && existingUser && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            <div>
+              <h1 className="text-2xl font-bold mb-2">이미 가입된 번호입니다</h1>
+              <p className="text-muted-foreground">
+                이 전화번호로 가입된 계정이 있습니다.
+                기존 계정과 연동하시겠습니까?
+              </p>
+            </div>
+
+            <div className="bg-muted/50 rounded-2xl p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-xl">
+                  {existingUser.name?.charAt(0) || existingUser.nickname?.charAt(0) || '?'}
+                </div>
+                <div>
+                  <p className="font-medium">{existingUser.name || existingUser.nickname || '이름 미설정'}</p>
+                  <p className="text-sm text-muted-foreground">{phone}</p>
+                </div>
+              </div>
+            </div>
+
+            <Button
+              variant="hero"
+              size="xl"
+              className="w-full"
+              disabled={loading}
+              onClick={handleLinkAccount}
+            >
+              {loading ? '연동 중...' : '기존 계정과 연동하기'}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="xl"
+              className="w-full"
+              onClick={handleCreateNewAccount}
+            >
+              다른 번호로 가입하기
+            </Button>
           </motion.div>
         )}
       </div>
