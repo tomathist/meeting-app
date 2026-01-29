@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginChoice from "./pages/onboarding/LoginChoice";
 import KakaoCallback from "./pages/onboarding/KakaoCallback";
 import PhoneLogin from "./pages/onboarding/PhoneLogin";
+import PhoneVerify from "./pages/onboarding/PhoneVerify";
 import ProfileSetup from "./pages/onboarding/ProfileSetup";
 
 // Main app
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/onboarding" element={<LoginChoice />} />
           <Route path="/onboarding/callback" element={<KakaoCallback />} />
           <Route path="/onboarding/phone" element={<PhoneLogin />} />
+          <Route path="/onboarding/phone-verify" element={<PhoneVerify />} />
           <Route path="/onboarding/profile" element={<ProfileSetup />} />
           
           {/* Main app */}

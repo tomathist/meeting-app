@@ -29,12 +29,15 @@ export default function KakaoCallback() {
         // 유저 정보 저장
         localStorage.setItem('user', JSON.stringify(data));
         
-        // 프로필 설정 완료 여부 확인
-        if (data.isNewUser || !data.name) {
-          // 새 유저 또는 프로필 미완성 -> 프로필 설정으로
+        // 핸드폰 인증 여부 확인
+        if (!data.phone) {
+          // 핸드폰 미인증 → 핸드폰 인증으로
+          navigate('/onboarding/phone-verify');
+        } else if (!data.name) {
+          // 프로필 미완성 → 프로필 설정으로
           navigate('/onboarding/profile');
         } else {
-          // 기존 유저 -> 메인으로
+          // 완료된 유저 → 메인으로
           navigate('/discover');
         }
       })
