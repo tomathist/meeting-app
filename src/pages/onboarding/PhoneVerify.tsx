@@ -128,7 +128,6 @@ export default function PhoneVerify() {
     const phoneNumber = phone.replace(/-/g, '');
 
     try {
-      // Twilio 인증 확인
       const verifyRes = await fetch('/api/sms/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,7 +140,6 @@ export default function PhoneVerify() {
         return;
       }
 
-      // DB에서 이 전화번호로 가입된 유저가 있는지 확인
       const { data: phoneUser } = await supabase
         .from('users')
         .select('*')
@@ -151,11 +149,9 @@ export default function PhoneVerify() {
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
       if (phoneUser && phoneUser.id !== currentUser.id) {
-        // 이미 다른 계정으로 가입된 번호
         setExistingUser(phoneUser);
         setStep('link');
       } else {
-        // 새 번호 - 현재 계정에 연결
         await linkPhoneToCurrentUser(phoneNumber);
       }
     } catch (e) {
@@ -190,38 +186,62 @@ export default function PhoneVerify() {
   };
 
   const handleLinkAccount = async () => {
-    // 기존 계정에 카카오 정보 연동
     setLoading(true);
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
     try {
-      // 기존 유저에 카카오 정보 추가
-      const { data, error } = await supabase
-        .from('users')
-        .update({
-          kakao_id: currentUser.kakao_id,
-          nickname: existingUser.nickname || currentUser.nickname,
-          profile_image: existingUser.profile_image || currentUser.profile_image,
-        })
-        .eq('id', existingUser.id)
-        .select()
-        .single();
+      // 1. 먼저 현재 카카오로 만든 임시 계정 삭제
+      if (currentUser.id) {
+        await supabase
+          .from('room_members')
+          .delete()
+          .eq('user_id', currentUser.id);
+        
+        await supabase
+          .from('rooms')
+          .delete()
+          .eq('host_id', currentUser.id);
 
-      if (error) {
-        alert('연동 실패: ' + error.message);
-        return;
+        await supabase
+          .from('users')
+          .delete()
+          .eq('id', currentUser.id);
       }
 
-      // 현재 카카오로 만든 임시 계정 삭제
-      await supabase
-        .from('users')
-        .delete()
-        .eq('id', currentUser.id);
+      // 2. 기존 유저에 카카오 정보 추가 (있으면)
+      const updateData: any = {};
+      if (currentUser.kakao_id) {
+        updateData.kakao_id = currentUser.kakao_id;
+      }
+      if (currentUser.nickname && !existingUser.nickname) {
+        updateData.nickname = currentUser.nickname;
+      }
+      if (currentUser.profile_image && !existingUser.profile_image) {
+        updateData.profile_image = currentUser.profile_image;
+      }
 
-      // 기존 계정으로 로그인
-      localStorage.setItem('user', JSON.stringify(data));
+      let finalUser = existingUser;
 
-      if (data.name) {
+      if (Object.keys(updateData).length > 0) {
+        const { data, error } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', existingUser.id)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Update error:', error);
+          // 에러나도 기존 계정으로 로그인은 진행
+        } else {
+          finalUser = data;
+        }
+      }
+
+      // 3. 기존 계정으로 로그인
+      localStorage.setItem('user', JSON.stringify(finalUser));
+
+      if (finalUser.name) {
         navigate('/discover');
       } else {
         navigate('/onboarding/profile');
@@ -234,7 +254,6 @@ export default function PhoneVerify() {
   };
 
   const handleCreateNewAccount = async () => {
-    // 새 계정으로 진행 (다른 번호로 인증)
     setStep('phone');
     setPhone('');
     setCode(['', '', '', '', '', '']);
