@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, User, Calendar, MapPin, GraduationCap } from 'lucide-react';
+import { ArrowLeft, User, Calendar, MapPin, GraduationCap, LogOut } from 'lucide-react';
 
 type Step = 'name' | 'gender' | 'birthdate' | 'area' | 'school';
 
@@ -39,15 +39,23 @@ export default function ProfileSetup() {
 
   const goBack = () => {
     if (currentStepIndex === 0) {
-      navigate('/onboarding');
+      // 첫 단계에서 뒤로가면 로그아웃
+      handleExit();
     } else {
       setStep(steps[currentStepIndex - 1]);
     }
   };
 
+  const handleExit = () => {
+    if (confirm('로그인 화면으로 돌아가시겠습니까?')) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('appliedRooms');
+      navigate('/onboarding');
+    }
+  };
+
   const goNext = async () => {
     if (currentStepIndex === steps.length - 1) {
-      // 마지막 단계 - DB에 저장
       setSaving(true);
       try {
         const res = await fetch('/api/user/update', {
@@ -60,7 +68,6 @@ export default function ProfileSetup() {
           alert('저장 실패: ' + data.error);
           return;
         }
-        // 로컬스토리지 업데이트
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         localStorage.setItem('user', JSON.stringify({ ...user, ...profile }));
         navigate('/discover');
@@ -236,7 +243,9 @@ export default function ProfileSetup() {
             />
           ))}
         </div>
-        <div className="w-9" />
+        <button onClick={handleExit} className="p-2 -mr-2 hover:bg-muted rounded-lg transition-colors">
+          <LogOut className="w-5 h-5 text-muted-foreground" />
+        </button>
       </div>
 
       <div className="flex-1 px-6 pt-8">
